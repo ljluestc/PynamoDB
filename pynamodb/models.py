@@ -34,7 +34,7 @@ else:
 
 from pynamodb.expressions.update import Action
 from pynamodb.exceptions import DoesNotExist, TableDoesNotExist, TableError, InvalidStateError, PutError, \
-    AttributeNullError
+    AttributeNullError, NoneValueException, TypeMismatchError
 from pynamodb.attributes import (
     AttributeContainer, AttributeContainerMeta, TTLAttribute, VersionAttribute
 )

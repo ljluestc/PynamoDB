@@ -211,6 +211,58 @@ class AttributeNullError(ValueError):
         self.attr_path = attr_name + '.' + self.attr_path
 
 
+    class TypeMismatchError(ValueError):
+    """
+    Raised when an attribute value doesn't match the expected type during validation.
+    """
+
+    def __init__(self, attr_name: str, expected_type: str, actual_type: str) -> None:
+        self.attr_path = attr_name
+        self.expected_type = expected_type
+        self.actual_type = actual_type
+
+    def __str__(self):
+        return f"Attribute '{self.attr_path}' is of type {self.actual_type}, expected type {self.expected_type}"
+
+    def prepend_path(self, attr_name: str) -> None:
+        self.attr_path = attr_name + '.' + self.attr_path
+
+
+    class VerboseClientError(botocore.exceptions.ClientError):
+    def __init__(
+        self,
+        error_response: Dict[str, Any],
+        operation_name: str,
+        verbose_properties: Optional[Any] = None,
+        *,
+        cancellation_reasons: Iterable[Optional[CancellationReason]] = (),
+    ) -> None:
+        """
+        Like ClientError, but with a verbose message.
+
+        :param error_response: Error response in shape expected by ClientError.
+        :param operation_name: The name of the operation that failed.
+        :param verbose_properties: A dict of properties to include in the verbose message.
+        :param cancellation_reasons: For `TransactionCanceledException` error code,
+          a list of cancellation reasons in the same order as the transaction's items (one to one).
+          For items which were not a reason for the transaction cancellation, :code:`None` will be the value.
+        """
+        if not verbose_properties:
+            verbose_properties = {}
+
+        self.MSG_TEMPLATE = (
+            'An error occurred ({{error_code}}) on request ({request_id}) '
+            'on table ({table_name}) when calling the {{operation_name}} '
+            'operation: {{error_message}}'
+        ).format(request_id=verbose_properties.get('request_id'), table_name=verbose_properties.get('table_name'))
+        self.cancellation_reasons = list(cancellation_reasons)
+
+        super(VerboseClientError, self).__init__(
+            error_response,  # type:ignore[arg-type]  # in stubs: botocore.exceptions._ClientErrorResponseTypeDef
+            operation_name,
+        )
+
+
 class VerboseClientError(botocore.exceptions.ClientError):
     def __init__(
         self,
@@ -238,10 +290,30 @@ class VerboseClientError(botocore.exceptions.ClientError):
             'on table ({table_name}) when calling the {{operation_name}} '
             'operation: {{error_message}}'
         ).format(request_id=verbose_properties.get('request_id'), table_name=verbose_properties.get('table_name'))
+class NoneValueException(ValueError):
+    """
+    Raised when a required key is None or missing in a MapAttribute.
+    """
+    def __init__(self, attr_name: str) -> None:
+        self.attr_path = attr_name
+        super(NoneValueException, self).__init__(f"Required attribute '{self.attr_path}' cannot be None")
 
-        self.cancellation_reasons = list(cancellation_reasons)
+    def prepend_path(self, attr_name: str) -> None:
+        self.attr_path = attr_name + '.' + self.attr_path
 
-        super(VerboseClientError, self).__init__(
-            error_response,  # type:ignore[arg-type]  # in stubs: botocore.exceptions._ClientErrorResponseTypeDef
-            operation_name,
-        )
+
+    class TypeMismatchError(ValueError):
+    """
+    Raised when an attribute value doesn't match the expected type during validation.
+    """
+
+    def __init__(self, attr_name: str, expected_type: str, actual_type: str) -> None:
+        self.attr_path = attr_name
+        self.expected_type = expected_type
+        self.actual_type = actual_type
+
+    def __str__(self):
+        return f"Attribute '{self.attr_path}' is of type {self.actual_type}, expected type {self.expected_type}"
+
+    def prepend_path(self, attr_name: str) -> None:
+        self.attr_path = attr_name + '.' + self.attr_path
